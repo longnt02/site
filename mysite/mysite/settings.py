@@ -78,6 +78,43 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
+import mysql.connector
+import sshtunnel
+from mysql.connector import Error
+
+sshtunnel.SSH_TIMEOUT = 5.0
+sshtunnel.TUNNEL_TIMEOUT = 5.0
+
+try:
+    with sshtunnel.SSHTunnelForwarder(
+            ('ssh.pythonanywhere.com'),
+            ssh_username='longnt02', ssh_password='12091995l',
+            remote_bind_address=('longnt02.mysql.pythonanywhere-services.com', 3306)
+    ) as tunnel:
+        connection = mysql.connector.connect(
+            user='longnt02', password='12091995',
+            host='127.0.0.1', port=tunnel.local_bind_port,
+            database='django_mysite',
+        )
+    if connection.is_connected():
+        db_Info = connection.get_server_info()
+        print("Connected to MySQL database... MySQL Server version on ", db_Info)
+
+        cursor = connection.cursor()
+        cursor.execute("select database();")
+        record = cursor.fetchone()
+        print("Your connected to - ", record)
+
+except Error as e:
+    print("Error while connecting to MySQL", e)
+finally:
+    # closing database connection.
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+        print("MySQL connection is closed")
+    # Do stuff
+
 
 DATABASES = {
     'default': {
